@@ -22,26 +22,23 @@ emoji_list = [
     "👍","👏","🙏","🔥","❤️"
 ]
 
-user_colors = {}
-messages = {}
-message_labels = {}
+user_colors,messages,message_labels,message_owner = {},{},{},{}    
 
-# ---------------------------
 # generate user color
-# ---------------------------
 def get_color(name):
     h = hashlib.md5(name.encode()).hexdigest()
     return "#" + h[:6]
 
-
-# ---------------------------
 # LOGIN WINDOW
-# ---------------------------
 login = ctk.CTk()
-login.title("Python Chat Login")
-login.geometry("360x300")
+login.title("Chatroom Meeting")
+login.iconbitmap("chat.ico")
 
-title = ctk.CTkLabel(login,text="Python Chat",font=("Arial",26,"bold"))
+x = (login.winfo_screenwidth()//2-180)
+y = (login.winfo_screenheight()//2-180)
+login.geometry(f"360x300+{x}+{y}")
+
+title = ctk.CTkLabel(login,text="Chatroom Meeting",font=("Arial",26,"bold"))
 title.pack(pady=25)
 
 username_entry = ctk.CTkEntry(login,placeholder_text="Username",width=220)
@@ -54,9 +51,7 @@ port_entry = ctk.CTkEntry(login,placeholder_text="Port",width=220)
 port_entry.insert(0,"5000")
 port_entry.pack(pady=8)
 
-# ---------------------------
 # connect
-# ---------------------------
 def start_chat():
 
     global client,username
@@ -129,8 +124,12 @@ def open_chat():
     current_theme = themes["Dark"]
 
     root = ctk.CTk()
-    root.title(f"Python Chat - {username}")
-    root.geometry("760x560")
+    root.title(f"Chatroom Meeting - {username}")
+    root.iconbitmap("chat.ico")
+
+    x = (root.winfo_screenwidth()//2-380)
+    y = (root.winfo_screenheight()//2-300)
+    root.geometry(f"760x560+{x}+{y}")
 
     # left panel
     left = ctk.CTkFrame(root,width=200)
@@ -144,23 +143,11 @@ def open_chat():
     label.pack(pady=10)
 
     user_list = ctk.CTkTextbox(left,width=180,height=400,font=("Arial",13))
-    user_list.pack(padx=8,pady=5,fill="y")
+    user_list.pack(fill="both",expand=True,padx=8,pady=5)
     user_list.configure(state="disabled")
 
-    btn_theme = ctk.CTkButton(left,text="CHANGE THEME",width=160,height=40,fg_color="gray",command=lambda: open_theme_menu())
-    btn_theme.pack(pady=20)
-
-    # theme_label = ctk.CTkLabel(left,text="THEME",font=("Arial",14,"bold"))
-    # theme_label.pack(pady=5)
-
-    # for t in themes:
-    #     btn = ctk.CTkButton(
-    #         left,
-    #         text=t,
-    #         width=160,
-    #         command=lambda theme=t: change_theme(theme)
-    #     )
-    #     btn.pack(pady=3)
+    btn_theme = ctk.CTkButton(left,text="CHANGE THEME",fg_color="#565B5E",hover_color="#404345",text_color="#DCE4EE",command=lambda: open_theme_menu())
+    btn_theme.pack(fill="both",expand=True,padx=10,pady=20)
 
     # chat box
     chat_box = ctk.CTkScrollableFrame(right,fg_color=current_theme["room_bg"])
@@ -288,12 +275,15 @@ def open_chat():
             name_frame.pack(fill="x",padx=10,anchor=anchor)
             name_label.pack(side=side_msg)
 
+            root.after(10, lambda: chat_box._parent_canvas.yview_moveto(1.0))
+
             if name == username:
                 msg.bind("<Button-3>", lambda e, mid=msg_id,: open_message_menu(e, mid))
 
             if msg_id:
                 messages[msg_id] = msg_frame
                 message_labels[msg_id] = msg
+                message_owner[msg_id] = name
 
         else:
             add_system(text)
@@ -336,14 +326,14 @@ def open_chat():
 
         menu = ctk.CTkToplevel(root)
         menu.focus()
-        menu.geometry(f"120x90+{event.x_root}+{event.y_root}")
+        menu.geometry(f"120x100+{event.x_root}+{event.y_root}")
         menu.overrideredirect(True)
 
-        edit_btn = ctk.CTkButton(menu,text="Edit",command=lambda:(menu.destroy(),open_edit_dialog(mid,text)))
-        edit_btn.pack(fill="x",padx=10,pady=5)
+        edit_btn = ctk.CTkButton(menu,text="Edit",corner_radius=15,command=lambda:(menu.destroy(),open_edit_dialog(mid,text)))
+        edit_btn.pack(fill="x",padx=10,pady=7.5)
 
-        del_btn = ctk.CTkButton(menu,text="Delete",fg_color="red",command=lambda:(menu.destroy(), send_delete(mid)))
-        del_btn.pack(fill="x",padx=10,pady=5)
+        del_btn = ctk.CTkButton(menu,text="Delete",fg_color="red",corner_radius=15,command=lambda:(menu.destroy(), send_delete(mid)))
+        del_btn.pack(fill="x",padx=10,pady=7.5)
 
         menu.bind("<FocusOut>", lambda e: menu.destroy())
     
@@ -351,7 +341,11 @@ def open_chat():
 
         win = ctk.CTkToplevel(root)
         win.title("Edit Message")
-        win.geometry("300x130")
+        win.iconbitmap("chat.ico")
+
+        x = (win.winfo_screenwidth()//2-150)
+        y = (win.winfo_screenheight()//2-65)
+        win.geometry(f"300x130+{x}+{y}")
 
         entry = ctk.CTkEntry(win,width=240)
         entry.insert(0,old_text)
@@ -373,9 +367,19 @@ def open_chat():
     
     def change_theme(theme_name):
 
-        current_theme = themes[theme_name]
+        nonlocal current_theme
 
+        current_theme = themes[theme_name]
         chat_box.configure(fg_color=current_theme["room_bg"])
+
+        for mid,label in message_labels.items():
+
+            owner = message_owner.get(mid)
+
+            if owner == username:
+                label.configure(fg_color=current_theme["my_msg"])
+            else:
+                label.configure(fg_color=current_theme["other_msg"])
     
     def open_theme_menu():
 
@@ -386,17 +390,24 @@ def open_chat():
 
         theme_menu = ctk.CTkToplevel(root)
         theme_menu.title("Theme")
-        theme_menu.geometry("200x200")
-        theme_menu.overrideredirect(True)
+
+        x = (theme_menu.winfo_screenwidth()//2-330)
+        y = (theme_menu.winfo_screenheight()//2-100)
+        theme_menu.geometry(f"180x170+{x}+{y}")
+
+        theme_menu.grab_set()
 
         frame = ctk.CTkFrame(theme_menu)
-        frame.pack(fill="both",expand=True,padx=5,pady=5)
+        frame.pack(padx=5,pady=5)
 
         for t in themes:
 
             btn = ctk.CTkButton(
                 frame,
                 text=t,
+                fg_color=themes[t]["room_bg"],      
+                hover_color=themes[t]["my_msg"],
+                corner_radius=10,
                 command=lambda theme=t:(change_theme(theme), theme_menu.destroy())
             )
 
@@ -452,7 +463,10 @@ def open_chat():
 
         menu_emoji = ctk.CTkToplevel(root)
         menu_emoji.title("Emoji")
-        menu_emoji.geometry("300x230")
+        menu_emoji.iconbitmap("chat.ico")
+        x = (menu_emoji.winfo_screenwidth()//2-160)
+        y = (menu_emoji.winfo_screenheight()//2-115)
+        menu_emoji.geometry(f"320x230+{x}+{y}")
 
         menu_emoji.grab_set()  # ป้องกัน focus หลุด
 
@@ -469,7 +483,7 @@ def open_chat():
                 text=e,
                 width=45,
                 height=45,
-                font=("Segoe UI Emoji",18),
+                font=("Segoe UI Emoji",22),
                 command=lambda emoji=e:(add_emoji(emoji), menu_emoji.destroy())
             )
 
@@ -519,6 +533,7 @@ def open_chat():
 
                         for m in packet["data"]:
                             root.after(0,add_chat,m["text"],m.get("uid"),m.get("id"))
+                            root.after(1000, lambda: chat_box._parent_canvas.yview_moveto(1.0))
 
                     elif packet["type"]=="typing":
 
@@ -561,7 +576,8 @@ def open_chat():
     exit_btn = ctk.CTkButton(
         input_frame,
         text="Exit",
-        fg_color="red",
+        fg_color="#963D3D",      
+        hover_color="#6F2E2E",
         width=70,
         command=exit_chat
     )
@@ -571,7 +587,8 @@ def open_chat():
         input_frame,
         text="😀",
         width=45,
-        font=("Segoe UI Emoji",18),
+        fg_color="transparent",
+        font=("Segoe UI Emoji",23),
         command=open_emoji
     )
     emoji_btn.pack(side="left",padx=5)
@@ -580,6 +597,8 @@ def open_chat():
         input_frame,
         text="Send",
         width=80,
+        fg_color="#3B8ED0",      
+        hover_color="#36719F",
         command=send_msg
     )
     send_btn.pack(side="right",padx=5)
