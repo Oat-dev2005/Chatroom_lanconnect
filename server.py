@@ -11,13 +11,9 @@ ctk.set_default_color_theme("blue")
 app = ctk.CTk()
 app.title("Server")
 app.geometry("300x150")
+app.iconbitmap("chat.ico")
 
-status_label = ctk.CTkLabel(
-    app,
-    text="สถานะ: ปิดเซิร์ฟเวอร์อยู่",
-    font=("Arial", 18),
-    text_color="red"
-)
+status_label = ctk.CTkLabel(app,text="สถานะ: ปิดเซิร์ฟเวอร์อยู่",font=("Arial", 18),text_color="red")
 status_label.pack(pady=10)
 
 host = "192.168.0.101"
@@ -36,7 +32,6 @@ message_counter = 1
 
 
 def log(msg):
-    # print(msg)
     status_label.configure(text=msg)
 
 
@@ -73,7 +68,6 @@ def handle_client(conn):
     while server_running:
 
         try:
-
             msg = conn.recv(1024).decode()
 
             if not msg:
@@ -187,7 +181,6 @@ def server_loop():
     while server_running:
 
         try:
-
             conn, addr = server.accept()
 
             conn.send("NAME\n".encode())

@@ -29,7 +29,7 @@ def get_color(name):
     h = hashlib.md5(name.encode()).hexdigest()
     return "#" + h[:6]
 
-# LOGIN WINDOW
+#หน้าต่าง LOGIN 
 login = ctk.CTk()
 login.title("Chatroom Meeting")
 login.iconbitmap("chat.ico")
@@ -57,12 +57,11 @@ def start_chat():
     global client,username
 
     username = username_entry.get()
-    #host = ip_entry.get()
-    host = "192.168.0.101"
+    host = ip_entry.get()
     port = port_entry.get()
 
     if username=="" or host=="" or port=="":
-        messagebox.showwarning("Error","Please fill all fields")
+        messagebox.showwarning("Error","กรูณากรอกข้อมูลให้ครบ")
         return
 
     try:
@@ -89,13 +88,10 @@ def start_chat():
 
     except Exception as e:
         print("Connection error:", e)
-        traceback.print_exc()
         messagebox.showerror("Error","Cannot connect to server")
         return
 
-# ---------------------------
-# CHAT WINDOW
-# ---------------------------
+#หน้าต่าง Chatroom 
 def open_chat():
 
     themes = {
@@ -163,9 +159,8 @@ def open_chat():
     msg_entry = ctk.CTkEntry(input_frame,placeholder_text="Type a message...",font=("Segoe UI Emoji",14))
     msg_entry.pack(side="left",fill="x",expand=True,padx=5,pady=10)
 
-    # ---------------------------
+
     # functions
-    # ---------------------------
     def exit_chat():
         try:
             client.close()
@@ -200,7 +195,6 @@ def open_chat():
             text_color="orange",
             font=("Segoe UI Emoji",12,"bold")
         )
-
         sys_label.pack(anchor="center")
 
     def add_chat(text,uid=None,msg_id=None):
@@ -224,12 +218,12 @@ def open_chat():
             if key not in user_colors:
                 user_colors[key] = get_color(key)
 
-            if name == username: # ข้อความของเรา
-                bubble_bg = current_theme["my_msg"]   # สีของตัวเอง
+            if name == username: 
+                bubble_bg = current_theme["my_msg"]   # สีข้อความของเรา
                 anchor = "e"
                 side_msg = ctk.RIGHT
-            else: # ข้อความคนอื่น
-                bubble_bg = current_theme["other_msg"]   # สีคนอื่น
+            else: 
+                bubble_bg = current_theme["other_msg"]   # สีข้อความคนอื่น
                 anchor = "w"
                 side_msg = ctk.LEFT
 
@@ -242,32 +236,9 @@ def open_chat():
             name_frame = ctk.CTkFrame(msg_frame, fg_color="transparent")
             name_frame.pack(fill="x", anchor=anchor)
 
-            msg = ctk.CTkLabel(
-                bubble_frame,
-                text=message,
-                fg_color=bubble_bg,
-                font=("Segoe UI Emoji",14),
-                corner_radius=15,
-                padx=14,
-                pady=8,
-                wraplength=350,
-                justify="left"
-            )
-
-            time_label = ctk.CTkLabel(
-                bubble_frame,
-                text=time_part,
-                # fg_color="#2f3136",
-                text_color="#aaaaaa",
-                font=("Segoe UI Emoji",12)
-            )
-
-            name_label = ctk.CTkLabel(
-                name_frame,
-                text=name,
-                text_color=user_colors[key],
-                font=("Segoe UI Emoji",12,"bold")
-            )
+            msg = ctk.CTkLabel(bubble_frame,text=message,fg_color=bubble_bg,font=("Segoe UI Emoji",14),corner_radius=15,padx=14,pady=8,wraplength=350,justify="left")
+            time_label = ctk.CTkLabel(bubble_frame,text=time_part,text_color="#aaaaaa",font=("Segoe UI Emoji",12))
+            name_label = ctk.CTkLabel(name_frame,text=name,text_color=user_colors[key],font=("Segoe UI Emoji",12,"bold"))
 
             msg.pack(side=side_msg, padx=10,pady=5,anchor="n")
             time_label.pack(side=side_msg, anchor="n")
@@ -410,11 +381,9 @@ def open_chat():
                 corner_radius=10,
                 command=lambda theme=t:(change_theme(theme), theme_menu.destroy())
             )
-
             btn.pack(fill="x",padx=5,pady=5)
 
     def update_users(users):
-
         user_list.configure(state="normal")
         user_list.delete("1.0","end")
 
@@ -435,7 +404,7 @@ def open_chat():
 
 
     def reset_ui():
-
+        
         for widget in chat_box.winfo_children():
             widget.destroy()
         add_system("[SYSTEM] Server ปิดแล้ว")
@@ -446,13 +415,9 @@ def open_chat():
 
         user_colors.clear()
 
-
-    # ---------------------------
     # emoji picker
-    # ---------------------------
     def add_emoji(e):
         msg_entry.insert("end",e)
-
 
     def open_emoji():
 
@@ -477,7 +442,6 @@ def open_chat():
         col = 0
 
         for e in emoji_list:
-
             btn = ctk.CTkButton(
                 frame,
                 text=e,
@@ -486,7 +450,6 @@ def open_chat():
                 font=("Segoe UI Emoji",22),
                 command=lambda emoji=e:(add_emoji(emoji), menu_emoji.destroy())
             )
-
             btn.grid(row=row,column=col,padx=4,pady=4)
 
             col += 1
@@ -495,23 +458,17 @@ def open_chat():
                 col = 0
                 row += 1
 
-    # ---------------------------
     # receive thread
-    # ---------------------------
     def receive():
 
         buffer=""
 
         while True:
-
             try:
-
                 data = client.recv(1024).decode()
-
                 if not data:
                     root.after(0,reset_ui)
                     break
-
                 buffer+=data
 
                 while "\n" in buffer:
@@ -530,36 +487,19 @@ def open_chat():
                         root.after(0,update_users,packet["data"])
 
                     elif packet["type"]=="history":
-
                         for m in packet["data"]:
                             root.after(0,add_chat,m["text"],m.get("uid"),m.get("id"))
                             root.after(1000, lambda: chat_box._parent_canvas.yview_moveto(1.0))
 
                     elif packet["type"]=="typing":
-
                         typing_label.configure(text=f"{packet['user']} is typing...")
-
-                        root.after(
-                            2000,
-                            lambda: typing_label.configure(text="")
-                        )
+                        root.after(2000,lambda: typing_label.configure(text=""))
 
                     elif packet["type"]=="edit":
-
-                        root.after(
-                            0,
-                            edit_message,
-                            packet["id"],
-                            packet["text"]
-                        )
+                        root.after(0,edit_message,packet["id"],packet["text"])
 
                     elif packet["type"]=="delete":
-
-                        root.after(
-                            0,
-                            delete_message,
-                            packet["id"]
-                        )
+                        root.after(0,delete_message,packet["id"])
 
             except (ConnectionResetError, ConnectionAbortedError):
                 root.after(0, reset_ui)
@@ -570,37 +510,14 @@ def open_chat():
                 root.after(0, reset_ui)
                 break
 
-    # ---------------------------
     # buttons
-    # ---------------------------
-    exit_btn = ctk.CTkButton(
-        input_frame,
-        text="Exit",
-        fg_color="#963D3D",      
-        hover_color="#6F2E2E",
-        width=70,
-        command=exit_chat
-    )
+    exit_btn = ctk.CTkButton(input_frame,text="Exit",fg_color="#963D3D",hover_color="#6F2E2E",width=70,command=exit_chat)
     exit_btn.pack(side="left",padx=5)
 
-    emoji_btn = ctk.CTkButton(
-        input_frame,
-        text="😀",
-        width=45,
-        fg_color="transparent",
-        font=("Segoe UI Emoji",23),
-        command=open_emoji
-    )
+    emoji_btn = ctk.CTkButton(input_frame,text="😀",width=45,fg_color="transparent",font=("Segoe UI Emoji",23),command=open_emoji)
     emoji_btn.pack(side="left",padx=5)
 
-    send_btn = ctk.CTkButton(
-        input_frame,
-        text="Send",
-        width=80,
-        fg_color="#3B8ED0",      
-        hover_color="#36719F",
-        command=send_msg
-    )
+    send_btn = ctk.CTkButton(input_frame,text="Send",width=80,fg_color="#3B8ED0",hover_color="#36719F",command=send_msg)
     send_btn.pack(side="right",padx=5)
 
     msg_entry.bind("<Return>",send_msg)
@@ -612,11 +529,8 @@ def open_chat():
     root.protocol("WM_DELETE_WINDOW",exit_chat)
     root.mainloop()
 
-# ---------------------------
 # connect button
-# ---------------------------
 connect_btn = ctk.CTkButton(login,text="Connect",width=180,command=start_chat)
-
 connect_btn.pack(pady=25)
 
 login.mainloop()
