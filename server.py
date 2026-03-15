@@ -141,7 +141,7 @@ def handle_client(conn):
 
             history.append({
                 "id":message_id,
-                "msg": msg,
+                "text": text,
                 "uid":uid,
                 "time":time
             })

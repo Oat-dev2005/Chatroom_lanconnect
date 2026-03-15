@@ -3,15 +3,14 @@ import threading
 import json
 import traceback
 import customtkinter as ctk
-from tkinter import colorchooser, messagebox
+from tkinter import messagebox
 import hashlib
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-client = None
-menu = None
-menu_emoji = None
+client,menu,menu_emoji,theme_menu = None,None,None,None
+
 username = ""
 
 EMOJI_FONT = ("Segoe UI Emoji", 16)
@@ -104,6 +103,31 @@ def start_chat():
 # ---------------------------
 def open_chat():
 
+    themes = {
+        "Dark": {
+            "room_bg": "#2b2b2b",
+            "my_msg": "#2b6cb0",
+            "other_msg": "#40444b"
+        },
+        "Midnight": {
+            "room_bg": "#1e1f22",
+            "my_msg": "#5865f2",
+            "other_msg": "#313338"
+        },
+        "Purple": {
+            "room_bg": "#2a1f3d",
+            "my_msg": "#7c3aed",
+            "other_msg": "#3b2a52"
+        },
+        "Ocean": {
+            "room_bg": "#1e3a5f",
+            "my_msg": "#0284c7",
+            "other_msg": "#1f4a75"
+        }
+    }
+    
+    current_theme = themes["Dark"]
+
     root = ctk.CTk()
     root.title(f"Python Chat - {username}")
     root.geometry("760x560")
@@ -123,12 +147,25 @@ def open_chat():
     user_list.pack(padx=8,pady=5,fill="y")
     user_list.configure(state="disabled")
 
-    chat_bg_color = "#2b2b2b"
+    btn_theme = ctk.CTkButton(left,text="CHANGE THEME",width=160,height=40,fg_color="gray",command=lambda: open_theme_menu())
+    btn_theme.pack(pady=20)
+
+    # theme_label = ctk.CTkLabel(left,text="THEME",font=("Arial",14,"bold"))
+    # theme_label.pack(pady=5)
+
+    # for t in themes:
+    #     btn = ctk.CTkButton(
+    #         left,
+    #         text=t,
+    #         width=160,
+    #         command=lambda theme=t: change_theme(theme)
+    #     )
+    #     btn.pack(pady=3)
 
     # chat box
-    chat_box = ctk.CTkScrollableFrame(right,fg_color=chat_bg_color)
+    chat_box = ctk.CTkScrollableFrame(right,fg_color=current_theme["room_bg"])
     chat_box.pack(fill="both",expand=True,padx=10,pady=10)
-
+    
     typing_label = ctk.CTkLabel(right,text="")
     typing_label.pack()
 
@@ -201,11 +238,11 @@ def open_chat():
                 user_colors[key] = get_color(key)
 
             if name == username: # ข้อความของเรา
-                bubble_bg = "#2b6cb0"   # สีของตัวเอง
+                bubble_bg = current_theme["my_msg"]   # สีของตัวเอง
                 anchor = "e"
                 side_msg = ctk.RIGHT
             else: # ข้อความคนอื่น
-                bubble_bg = "#40444b"   # สีคนอื่น
+                bubble_bg = current_theme["other_msg"]   # สีคนอื่น
                 anchor = "w"
                 side_msg = ctk.LEFT
 
@@ -334,13 +371,36 @@ def open_chat():
         save_btn = ctk.CTkButton(win,text="Save",command=save)
         save_btn.pack(pady=10)
     
-    def change_chat_color():
+    def change_theme(theme_name):
 
-        color = colorchooser.askcolor()[1]
+        current_theme = themes[theme_name]
 
-        if color:
-            chat_bg_color = color
-            chat_box.configure(fg_color=chat_bg_color)
+        chat_box.configure(fg_color=current_theme["room_bg"])
+    
+    def open_theme_menu():
+
+        global theme_menu
+
+        if theme_menu and theme_menu.winfo_exists():
+            return
+
+        theme_menu = ctk.CTkToplevel(root)
+        theme_menu.title("Theme")
+        theme_menu.geometry("200x200")
+        theme_menu.overrideredirect(True)
+
+        frame = ctk.CTkFrame(theme_menu)
+        frame.pack(fill="both",expand=True,padx=5,pady=5)
+
+        for t in themes:
+
+            btn = ctk.CTkButton(
+                frame,
+                text=t,
+                command=lambda theme=t:(change_theme(theme), theme_menu.destroy())
+            )
+
+            btn.pack(fill="x",padx=5,pady=5)
 
     def update_users(users):
 
@@ -365,7 +425,8 @@ def open_chat():
 
     def reset_ui():
 
-        chat_box.delete("1.0","end")
+        for widget in chat_box.winfo_children():
+            widget.destroy()
         add_system("[SYSTEM] Server ปิดแล้ว")
 
         user_list.configure(state="normal")
@@ -531,7 +592,6 @@ def open_chat():
 
     root.protocol("WM_DELETE_WINDOW",exit_chat)
     root.mainloop()
-
 
 # ---------------------------
 # connect button
